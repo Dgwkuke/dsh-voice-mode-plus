@@ -7,11 +7,11 @@
   "main": "lib/index.js",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/qishuilalala/dsh-voice-mode.git"
+    "url": "git+https://github.com/Dgwkuke/dsh-voice-mode-plus.git"
   },
-  "homepage": "https://github.com/qishuilalala/dsh-voice-mode#readme",
+  "homepage": "https://github.com/Dgwkuke/dsh-voice-mode-plus#readme",
   "bugs": {
-    "url": "https://github.com/qishuilalala/dsh-voice-mode/issues"
+    "url": "https://github.com/Dgwkuke/dsh-voice-mode-plus/issues"
   },
   "engines": {
     "node": ">=18.0.0",
@@ -139,5 +139,6 @@
   "publishConfig": {
     "access": "public"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "author": "Dgwkuke"
 }
