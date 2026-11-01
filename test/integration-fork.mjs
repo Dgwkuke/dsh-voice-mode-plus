@@ -116,7 +116,7 @@ function makeRes() {
   return res
 }
 
-function makeReq({ remoteAddress = '127.0.0.1', origin, host = '127.0.0.1:3080', method = 'POST', url = '/voice-mode/toggle', body }) {
+function makeReq({ remoteAddress = '127.0.0.1', origin, host = '127.0.0.1:3080', method = 'POST', url = '/voice-mode-plus/toggle', body }) {
   const listeners = {}
   const req = {
     socket: { remoteAddress },
@@ -151,46 +151,46 @@ async function awaitRes(res, ms = 2000) {
 
 // 1) 回环校验
 {
-  const res = get('/voice-mode', makeReq({ method: 'GET', body: undefined }))
+  const res = get('/voice-mode-plus', makeReq({ method: 'GET', body: undefined }))
   check('loopback GET allowed', res.statusCode === 200, `status=${res.statusCode}`)
 }
 {
-  const res = get('/voice-mode', makeReq({ method: 'GET', remoteAddress: '192.168.1.5' }))
+  const res = get('/voice-mode-plus', makeReq({ method: 'GET', remoteAddress: '192.168.1.5' }))
   check('non-loopback denied (403)', res.statusCode === 403, `status=${res.statusCode}`)
 }
 {
-  const res = get('/voice-mode/stream', makeReq({ method: 'GET', remoteAddress: '10.0.0.2' }))
+  const res = get('/voice-mode-plus/stream', makeReq({ method: 'GET', remoteAddress: '10.0.0.2' }))
   check('non-loopback /stream denied', res.statusCode === 403, `status=${res.statusCode}`)
 }
 
 // 2) Origin 校验
 {
-  const res = get('/voice-mode/toggle', makeReq({ origin: 'http://evil.example', body: JSON.stringify({ sessionId: 'live-1', on: true }) }))
+  const res = get('/voice-mode-plus/toggle', makeReq({ origin: 'http://evil.example', body: JSON.stringify({ sessionId: 'live-1', on: true }) }))
   check('cross-origin toggle denied (403)', res.statusCode === 403, `status=${res.statusCode}`)
 }
 
 // 3) 会话存在性
 {
-  const res = await awaitRes(get('/voice-mode/toggle', makeReq({ body: JSON.stringify({ sessionId: 'ghost', on: true }) })))
+  const res = await awaitRes(get('/voice-mode-plus/toggle', makeReq({ body: JSON.stringify({ sessionId: 'ghost', on: true }) })))
   check('unknown session denied (403)', res.statusCode === 403, `status=${res.statusCode}`)
 }
 {
-  const res = await awaitRes(get('/voice-mode/toggle', makeReq({ body: JSON.stringify({ sessionId: 'live-1', on: true }) })))
+  const res = await awaitRes(get('/voice-mode-plus/toggle', makeReq({ body: JSON.stringify({ sessionId: 'live-1', on: true }) })))
   check('known session enters voice mode (200)', res.statusCode === 200, `status=${res.statusCode} body=${res.body}`)
 }
 
 // 4) 限流（2 秒内再次 toggle）
 {
-  const res = await awaitRes(get('/voice-mode/toggle', makeReq({ body: JSON.stringify({ sessionId: 'live-1', on: true }) })))
+  const res = await awaitRes(get('/voice-mode-plus/toggle', makeReq({ body: JSON.stringify({ sessionId: 'live-1', on: true }) })))
   check('toggle rate limit (429)', res.statusCode === 429, `status=${res.statusCode}`)
 }
 
 // 5) 本地 VITS 试听（真实合成：模型加载 + 推理 + WAV 编码）
 {
   const res = makeRes()
-  const handler = routes.get('/voice-mode/preview')
+  const handler = routes.get('/voice-mode-plus/preview')
   const req = makeReq({
-    url: '/voice-mode/preview',
+    url: '/voice-mode-plus/preview',
     origin: 'http://127.0.0.1:3080',
     body: JSON.stringify({ voice: 'suyingxue', rate: 1 }),
   })
@@ -209,7 +209,7 @@ async function awaitRes(res, ms = 2000) {
     // 第二个说话人（sid=2 傅斯遇）：验证多说话人映射在无 dataDir 下是否可用
     const res2 = makeRes()
     const req2 = makeReq({
-      url: '/voice-mode/preview',
+      url: '/voice-mode-plus/preview',
       origin: 'http://127.0.0.1:3080',
       body: JSON.stringify({ voice: 'fushiyu', rate: 1 }),
     })
@@ -225,7 +225,7 @@ async function awaitRes(res, ms = 2000) {
 // 6) 引擎热切换（设置面板联动：vits ⇄ edge，不触发 Edge 网络合成）
 {
   fakeCtx.triggerSettings({ ttsEngine: 'edge' })
-  const res = await awaitRes(get('/voice-mode/config', makeReq({ method: 'GET' })))
+  const res = await awaitRes(get('/voice-mode-plus/config', makeReq({ method: 'GET' })))
   const cfg = JSON.parse(res.body)
   check(
     'engine hot-switch to edge',
@@ -233,7 +233,7 @@ async function awaitRes(res, ms = 2000) {
     `ttsEngine=${cfg.ttsEngine} audioMime=${cfg.audioMime}`,
   )
   fakeCtx.triggerSettings({ ttsEngine: 'vits' })
-  const res2 = await awaitRes(get('/voice-mode/config', makeReq({ method: 'GET' })))
+  const res2 = await awaitRes(get('/voice-mode-plus/config', makeReq({ method: 'GET' })))
   const cfg2 = JSON.parse(res2.body)
   check(
     'engine hot-switch back to vits',
@@ -245,11 +245,11 @@ async function awaitRes(res, ms = 2000) {
 // 6.5) kokoro 原生预览（sherpa-onnx-node addon；数字音色 62 男声 + 命名音色 zf_xiaobei）
 {
   fakeCtx.triggerSettings({ ttsEngine: 'kokoro' })
-  const handler = routes.get('/voice-mode/preview')
+  const handler = routes.get('/voice-mode-plus/preview')
   for (const voice of ['62', 'zf_xiaobei']) {
     const res = makeRes()
     const req = makeReq({
-      url: '/voice-mode/preview',
+      url: '/voice-mode-plus/preview',
       origin: 'http://127.0.0.1:3080',
       body: JSON.stringify({ voice, rate: 1 }),
     })
@@ -275,7 +275,7 @@ async function awaitRes(res, ms = 2000) {
 // 7) 退出语音模式（已知会话；先等限流窗口过期）
 {
   await new Promise((r) => setTimeout(r, 2200))
-  const res = await awaitRes(get('/voice-mode/toggle', makeReq({ body: JSON.stringify({ sessionId: 'live-1', on: false }) })))
+  const res = await awaitRes(get('/voice-mode-plus/toggle', makeReq({ body: JSON.stringify({ sessionId: 'live-1', on: false }) })))
   check('exit voice mode (200)', res.statusCode === 200, `status=${res.statusCode} body=${res.body}`)
 }
 

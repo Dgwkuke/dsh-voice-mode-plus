@@ -203,7 +203,7 @@ export class EdgeTtsEngine implements TtsEngine {
   }
 }
 
-/** Edge 音色列表（重命名缓存；/voice-mode/voices 用；失败抛错由调用方处理）。 */
+/** Edge 音色列表（重命名缓存；/voice-mode-plus/voices 用；失败抛错由调用方处理）。 */
 let edgeVoicesCache: Array<{ ShortName: string; Locale: string; Gender: string; FriendlyName: string }> | null = null
 export async function listEdgeVoices(force = false): Promise<Array<{ ShortName: string; Locale: string; Gender: string; FriendlyName: string }>> {
   if (edgeVoicesCache && !force) return edgeVoicesCache
@@ -554,7 +554,7 @@ export class TtsQueue {
     // 积压超 20 就会静默丢最旧句子——「长话跳句」的另一来源。500 覆盖任意正常回复
     // 长度（每句仅几十字，内存无忧），仍留病理性护栏；超限告警而非静默。
     if (q.pending.length >= 500) {
-      console.warn('[dsh-voice-mode] TTS queue overflow, dropping oldest sentence')
+      console.warn('[dsh-voice-mode-plus] TTS queue overflow, dropping oldest sentence')
       q.pending.shift()
     }
     q.pending.push({ text, epoch: q.epoch })
@@ -620,7 +620,7 @@ export class TtsQueue {
             buf = await this.engine.synthesize(item.text)
             break
           } catch (e) {
-            console.warn(`[dsh-voice-mode] synthesis failed (${attempt + 1}/${MAX_SYNTH_ATTEMPTS}): ${String(e)}`)
+            console.warn(`[dsh-voice-mode-plus] synthesis failed (${attempt + 1}/${MAX_SYNTH_ATTEMPTS}): ${String(e)}`)
             if (attempt < MAX_SYNTH_ATTEMPTS - 1) {
               await this.retrySleep(400 * (attempt + 1))
             }
@@ -690,7 +690,7 @@ export class TtsQueue {
       // synthesize 做了 try/catch + 3 次重试，能逃到这里的只有监听器之外的非预期抛错。
       // 批 A：补 sessionId 上下文（item / attempt 是 while/for 内部 const/let，
       // 外层 catch 不可见——不做捕获重构以保持外科手术式改动）。
-      console.warn(`[dsh-voice-mode] TTS unavailable: sid=${sessionId} err=${String(e)}`)
+      console.warn(`[dsh-voice-mode-plus] TTS unavailable: sid=${sessionId} err=${String(e)}`)
       if (!q.errorNotified) {
         q.errorNotified = true
         this.onError?.(sessionId)

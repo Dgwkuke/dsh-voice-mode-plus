@@ -1,14 +1,14 @@
 /**
- * dsh-voice-mode host half.
+ * dsh-voice-mode-plus host half.
  *
  * 一期架构：
  *  - 全局单活指针 activeVoiceSession：同一时刻仅一个会话处于语音模式；
  *    仅该会话的 llm/stream 被 tap（text-delta 过滤 -> 分句 -> TTS -> SSE），
  *    普通会话 next() 直达（模式隔离，验收点 7）。
- *  - HTTP 面：/voice-mode/toggle（进入/退出）、/asr（PCM -> 流式 zipformer2
+ *  - HTTP 面：/voice-mode-plus/toggle（进入/退出）、/asr（PCM -> 流式 zipformer2
  *    文本）、/cancel（TTS epoch++ + 可选会话回合取消）、/stream（SSE 音频帧 +
  *    模式状态广播）、/config（client 引导参数）。
- *  - 模型：懒下载 + .part 断点续传至 cacheDir（默认 ~/.cache/dsh-voice-mode/models/）。
+ *  - 模型：懒下载 + .part 断点续传至 cacheDir（默认 ~/.cache/dsh-voice-mode-plus/models/）。
  */
 import type { Context } from '@deepseek-ai/cordis'
 import z from '@deepseek-ai/schemastery'
@@ -52,13 +52,13 @@ import { correctText } from './llm-correct.ts'
 import { normalizePromptLang, previewSample, spokenPrompt, type PromptLang } from './prompts.ts'
 import { pickKnownKeys, readLegacyVoiceSettings, readOverrides, settingsFilePath, unknownKeys, writeOverrides } from './settings-store.ts'
 
-export const name = 'voice-mode'
+export const name = 'voice-mode-plus'
 
 /**
- * 命名空间品牌常量（与官方 settingsNamespace('voice-mode') 等价：其运行时仅做
+ * 命名空间品牌常量（与官方 settingsNamespace('voice-mode-plus') 等价：其运行时仅做
  * kebab-case 校验（/^[a-z][a-z0-9-]*$/）后原样返回；此处本地断言避免对宿主包运行时 import）。
  */
-const NS_VOICE_MODE = 'voice-mode' as SettingsNamespace
+const NS_VOICE_MODE = 'voice-mode-plus' as SettingsNamespace
 
 /** P2-4 显式回合状态（host 为准，SSE 'turn' 广播；barge-in = 状态迁移 + 三层清理）。 */
 type TurnState = 'idle' | 'listening' | 'finalizing' | 'agent-speaking'
@@ -103,9 +103,9 @@ const MUTED_STREAMS_WITHOUT_TURN = 4
 /**
  * 插件 HTTP 命名空间（固定路径）。client bundle 以静态产物分发，无法感知
  * 宿主侧配置；若 basePath 可配置而客户端硬编码，一旦修改即分叉。故按
- * 客户端契约固定为 /voice-mode（不提供覆盖键；custom basePath 无增益）。
+ * 客户端契约固定为 /voice-mode-plus（不提供覆盖键；custom basePath 无增益）。
  */
-const BASE_PATH = '/voice-mode'
+const BASE_PATH = '/voice-mode-plus'
 
 /**
  * /preview 错误归类（批 I 任务 4/4）：把引擎/网络/合成失败分成三档，
@@ -470,7 +470,7 @@ export interface Config {
   ttsEngine: 'edge' | 'vits' | 'kokoro'
   /** Kokoro 模型精度（int8 默认 / fp32 音质更好）。 */
   kokoroModel: KokoroModel
-  /** 允许局域网访问 /voice-mode/*（默认仅回环；开启后建议前置认证门）。 */
+  /** 允许局域网访问 /voice-mode-plus/*（默认仅回环；开启后建议前置认证门）。 */
   allowLan: boolean
   /** 允许白名单之外的模型下载源（默认关；仅 https）。 */
   allowCustomModelHost: boolean
@@ -552,7 +552,7 @@ export const Config: z<Config> = z.object({
   // 调用形态（sv({}) → {field:{}}），而 0.1.5-rc.3 起的设置分层会调用插件 Config 做
   // merge，{} 透过 mergeLayers 污染并触发 ValidationError（2026-09-23 实测）。
   // 0.1.7 功能读取走 config 直接读，不依赖 volatile（仅官方 UI 自动投影受影响，
-  // 本插件自带 settings-form 设置面板 + /voice-mode/config，不受影响）。
+  // 本插件自带 settings-form 设置面板 + /voice-mode-plus/config，不受影响）。
   autoSend: z.boolean().default(true),
   autoResume: z.boolean().default(false),
   mode: z.union([z.const('toggle'), z.const('hold'), z.const('once')]).default('toggle'),
@@ -883,7 +883,7 @@ export function apply(ctx: Context, config: Config): void {
   } else {
     // 路径 B 用户设置：Config 基线 ⊕ 覆盖层文件（settings-store.ts 文件头说明为何不走官方存储）。
     const loaded = readOverrides(settingsFile, SETTING_KEYS)
-    if (loaded.warn) console.warn(`[dsh-voice-mode] ignoring settings overlay ${settingsFile}: ${loaded.warn}`)
+    if (loaded.warn) console.warn(`[dsh-voice-mode-plus] ignoring settings overlay ${settingsFile}: ${loaded.warn}`)
     // 首次运行（覆盖层文件尚不存在）：从 dsh ≤0.1.6 留下的 settings.yaml(.imported) 的 voice-mode 段迁移一次，
     // 落盘后即以覆盖层为准（要恢复默认请把文件内容改成 {}，勿删除，否则会再次迁移）。
     let migrated = false
@@ -901,7 +901,7 @@ export function apply(ctx: Context, config: Config): void {
         resolveSettings({ [k]: v })
         valid[k] = v
       } catch (e) {
-        console.warn(`[dsh-voice-mode] ignoring invalid settings override "${k}" (falling back to the Config baseline): ${String(e).slice(0, 160)}`)
+        console.warn(`[dsh-voice-mode-plus] ignoring invalid settings override "${k}" (falling back to the Config baseline): ${String(e).slice(0, 160)}`)
       }
     }
     try {
@@ -910,13 +910,13 @@ export function apply(ctx: Context, config: Config): void {
       if (migrated) {
         try {
           writeOverrides(settingsFile, valid)
-          console.log(`[dsh-voice-mode] migrated ${Object.keys(valid).length} setting(s) from the legacy settings.yaml to ${settingsFile}`)
+          console.log(`[dsh-voice-mode-plus] migrated ${Object.keys(valid).length} setting(s) from the legacy settings.yaml to ${settingsFile}`)
         } catch (e) {
-          console.warn(`[dsh-voice-mode] legacy settings migration could not be saved (still in effect for this run): ${String(e)}`)
+          console.warn(`[dsh-voice-mode-plus] legacy settings migration could not be saved (still in effect for this run): ${String(e)}`)
         }
       }
     } catch (e) {
-      console.warn(`[dsh-voice-mode] settings overlay failed validation as a whole; falling back to the Config baseline: ${String(e)}`)
+      console.warn(`[dsh-voice-mode-plus] settings overlay failed validation as a whole; falling back to the Config baseline: ${String(e)}`)
       vset = voiceSettingsFromConfig(config)
     }
   }
@@ -1229,7 +1229,7 @@ export function apply(ctx: Context, config: Config): void {
         if (denyNonLoopback(req, res)) return
         respondJson(res, 200, {
           ok: true,
-          name: 'dsh-voice-mode',
+          name: 'dsh-voice-mode-plus',
           enabled: config.enabled,
           active: activeVoiceSession,
         })
@@ -1351,7 +1351,7 @@ export function apply(ctx: Context, config: Config): void {
             const engineStatus = queue.status()
             const sampleLen = sample.length
             console.warn(
-              `[dsh-voice-mode] preview synthesis failed: category=${category} engine=${engineName} engineReady=${engineStatus.ready} sampleLen=${sampleLen} attempt=1 voice=${voice} err=${errMsg}`,
+              `[dsh-voice-mode-plus] preview synthesis failed: category=${category} engine=${engineName} engineReady=${engineStatus.ready} sampleLen=${sampleLen} attempt=1 voice=${voice} err=${errMsg}`,
             )
             // UI 端只暴露归类提示——不传 errMsg / 引擎 ready / sample 长度等诊断细节
             // （防止 errMsg 泄露模型路径 / 内部错误堆栈 / 第三方 SDK 字面量）。
@@ -1590,7 +1590,7 @@ export function apply(ctx: Context, config: Config): void {
               respondJson(res, 200, { ok: done, kind })
             })
             .catch((e) => {
-              console.warn(`[dsh-voice-mode] model retry failed: ${String(e)}`)
+              console.warn(`[dsh-voice-mode-plus] model retry failed: ${String(e)}`)
               respondJson(res, 500, { code: 'internal', error: 'model retry failed' })
             })
         })
@@ -1642,7 +1642,7 @@ export function apply(ctx: Context, config: Config): void {
               respondJson(res, 200, { ok: true, engine })
             })
             .catch((e) => {
-              console.warn(`[dsh-voice-mode] models/download failed: ${String(e)}`)
+              console.warn(`[dsh-voice-mode-plus] models/download failed: ${String(e)}`)
               respondJson(res, 500, { code: 'internal', error: 'internal error' })
             })
         })
@@ -1683,7 +1683,7 @@ export function apply(ctx: Context, config: Config): void {
             .prepare()
             .then(() => respondJson(res, 200, { ok: true, engine }))
             .catch((e) => {
-              console.warn(`[dsh-voice-mode] model download failed: ${String(e)}`)
+              console.warn(`[dsh-voice-mode-plus] model download failed: ${String(e)}`)
               respondJson(res, 502, { code: 'model_download_failed', error: 'model download failed' })
             })
         })
@@ -1703,7 +1703,7 @@ export function apply(ctx: Context, config: Config): void {
           const voices = await listEdgeVoices()
           respondJson(res, 200, { voices })
         } catch (e) {
-          console.warn(`[dsh-voice-mode] listing Edge voices failed: ${String(e)}`)
+          console.warn(`[dsh-voice-mode-plus] listing Edge voices failed: ${String(e)}`)
           respondJson(res, 502, { code: 'internal', error: 'voice list unavailable' })
         }
       },
@@ -1866,7 +1866,7 @@ export function apply(ctx: Context, config: Config): void {
           } catch (e) {
             // schema 校验失败 = 客户端输入问题（400）；其余（落盘等）= 500。不回显内部路径。
             const isValidation = e instanceof Error && e.name === 'ValidationError'
-            console.warn(`[dsh-voice-mode] settings update failed: ${String(e)}`)
+            console.warn(`[dsh-voice-mode-plus] settings update failed: ${String(e)}`)
             respondJson(res, isValidation ? 400 : 500, {
               code: isValidation ? 'bad_request' : 'internal',
               error: isValidation ? `invalid value: ${(e as Error).message.slice(0, 200)}` : 'settings update failed',
@@ -1907,7 +1907,7 @@ export function apply(ctx: Context, config: Config): void {
               respondJson(res, 200, { ok: true, mode })
             })
             .catch((e: unknown) => {
-              console.warn(`[dsh-voice-mode] mode update failed: ${String(e)}`)
+              console.warn(`[dsh-voice-mode-plus] mode update failed: ${String(e)}`)
               respondJson(res, 500, { code: 'internal', error: 'mode update failed' })
             })
         })
@@ -2014,7 +2014,7 @@ export function apply(ctx: Context, config: Config): void {
           res.write(`event: ${event}\ndata: ${JSON.stringify(payload)}\n\n`)
           // I-11：无背压处理时 write 返回 false 也照写，慢消费者会把全部帧驻留内存。
           if (res.writableLength > SSE_MAX_BUFFERED) {
-            console.warn(`[dsh-voice-mode] SSE client too slow (buffered ${res.writableLength}B); dropping connection`)
+            console.warn(`[dsh-voice-mode-plus] SSE client too slow (buffered ${res.writableLength}B); dropping connection`)
             res.destroy() // close 事件走 cleanup 摘除；客户端 EventSource 自动重连
           }
         }

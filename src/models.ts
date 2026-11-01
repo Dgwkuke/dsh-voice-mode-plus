@@ -191,7 +191,7 @@ export async function ensureModelFile(opts: EnsureModelOptions): Promise<boolean
   // 仅在校验失败（downloadVerified 内部 SHA 不匹配）时才清 .part——那里已处理。
   // 原始错误串只进宿主日志；下行（SSE，所有客户端可见）不带，避免泄露路径/URL（host 只发稳定码的约定）。
   if (opts.signal?.aborted) return false // dispose/热重载主动取消：不是下载失败，不发错误也不告警
-  if (lastError) console.warn(`[dsh-voice-mode] model download failed: ${spec.file}: ${lastError}`)
+  if (lastError) console.warn(`[dsh-voice-mode-plus] model download failed: ${spec.file}: ${lastError}`)
   broadcast('asr-error', { file: spec.file, reason: 'checksum_or_download_failed' })
   return false
 }
@@ -225,7 +225,7 @@ async function downloadVerified(opts: {
   const url = `${host}/${repo}/resolve/${spec.revision ?? 'main'}/${spec.file}`
   const partSt = await stat(partPath).catch(() => null)
   const resumeFrom = partSt?.isFile() ? partSt.size : 0
-  const headers: Record<string, string> = { 'user-agent': 'dsh-voice-mode' }
+  const headers: Record<string, string> = { 'user-agent': 'dsh-voice-mode-plus' }
   if (resumeFrom > 0) headers.range = `bytes=${resumeFrom}-`
 
   // M4（Issue #15 审查 Minor）：补超时。早年裸 fetch 在上游「接受连接后永不响应」
@@ -374,7 +374,7 @@ export async function ensureModelTree(opts: {
       // M4：补超时（同上，仅 headers 阶段）——上游挂住时 ensureModelTree 的 Promise
       // 不 settle，Kokoro 的 ~355 个语音表文件补全永远不返回，/preview 与合成双双卡死。
       const res = await fetchWithHeadersTimeout(host + '/api/models/' + repo + '?blobs=true', {
-        headers: { 'user-agent': 'dsh-voice-mode' },
+        headers: { 'user-agent': 'dsh-voice-mode-plus' },
       })
       // 重定向后的最终域名必须仍在白名单内（与下方两处下载路径同款守卫：文件头
       // 不变式「重定向跳转到白名单之外的域名一律拒绝」——列举这一跳曾独缺）。
@@ -422,7 +422,7 @@ export async function ensureModelTree(opts: {
           else opts.signal?.addEventListener('abort', onAbort, { once: true })
           const idle = makeIdleWatch(ac, opts.idleTimeoutMs ?? MODEL_BODY_IDLE_TIMEOUT_MS)
           try {
-          const res = await fetchWithHeadersTimeout(url, { headers: { 'user-agent': 'dsh-voice-mode' }, redirect: 'follow' }, ac)
+          const res = await fetchWithHeadersTimeout(url, { headers: { 'user-agent': 'dsh-voice-mode-plus' }, redirect: 'follow' }, ac)
           if (!redirectHostAllowed(res.url, allowCustomHost)) continue
           if (res.status !== 200) continue
           idle.kick()

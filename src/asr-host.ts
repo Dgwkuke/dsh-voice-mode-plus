@@ -136,7 +136,7 @@ export interface AsrRuntime {
   markStale(): void
 }
 
-/** 模型状态返回（/voice-mode/models/status 载荷）。 */
+/** 模型状态返回（/voice-mode-plus/models/status 载荷）。 */
 export interface ModelFileStatus {
   name: string
   exists: boolean
@@ -471,7 +471,7 @@ export function createAsrRuntime(options: AsrRuntimeOptions): AsrRuntime {
         senseWorker = client
         return client
       } catch (e) {
-        console.warn('[dsh-voice-mode] SenseVoice worker init failed: ' + String(e))
+        console.warn('[dsh-voice-mode-plus] SenseVoice worker init failed: ' + String(e))
         return null
       }
     })().finally(() => {
@@ -497,7 +497,7 @@ export function createAsrRuntime(options: AsrRuntimeOptions): AsrRuntime {
       // fetch 侧 Promise.race(10s) 在 worker 异步回执下真正可触发（主线程不被 decode 占住）。
       return await worker.request('decode', buf)
     } catch (e) {
-      console.warn('[dsh-voice-mode] SenseVoice re-transcribe failed: ' + String(e))
+      console.warn('[dsh-voice-mode-plus] SenseVoice re-transcribe failed: ' + String(e))
       return null
     }
   }
@@ -687,7 +687,7 @@ export function createAsrRuntime(options: AsrRuntimeOptions): AsrRuntime {
       const ff = finalizing.get(sessionId)
       ff?.delete(epoch)
       if (ff && ff.size === 0) finalizing.delete(sessionId)
-      console.warn('[dsh-voice-mode] finalize failed: ' + String(e))
+      console.warn('[dsh-voice-mode-plus] finalize failed: ' + String(e))
       return ''
     })
     if (!inflightMap) {
@@ -1055,7 +1055,7 @@ export function handleAsrRequest(
           respondJson(res, 200, { isSpeech: out.isSpeech })
         })
         .catch((e: unknown) => {
-          console.warn(`[dsh-voice-mode] asr detect failed: ${String(e)}`)
+          console.warn(`[dsh-voice-mode-plus] asr detect failed: ${String(e)}`)
           respondJson(res, 500, { code: 'internal', error: 'internal error' })
         })
       return
@@ -1075,7 +1075,7 @@ export function handleAsrRequest(
         respondJson(res, 200, body)
       })
       .catch((e: unknown) => {
-        console.warn(`[dsh-voice-mode] asr decode failed: ${String(e)}`)
+        console.warn(`[dsh-voice-mode-plus] asr decode failed: ${String(e)}`)
         respondJson(res, 500, { code: 'internal', error: 'internal error' })
       })
   })

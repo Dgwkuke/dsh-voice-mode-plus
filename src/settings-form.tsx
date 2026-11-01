@@ -41,7 +41,7 @@ const t = {
 }
 
 /** 插件 HTTP 命名空间（与 host 侧 BASE_PATH 常量及其余 client 引用一致，固定不可配置）。 */
-const BASE_PATH = '/voice-mode'
+const BASE_PATH = '/voice-mode-plus'
 
 const cardStyle: React.CSSProperties = {
   border: `1px solid ${t.border}`,
@@ -805,7 +805,7 @@ function SegGroup({
   )
 }
 
-/** 模型状态载荷（/voice-mode/models/status 返回）。 */
+/** 模型状态载荷（/voice-mode-plus/models/status 返回）。 */
 interface ModelsStatusPayload {
   asr: { repo: string; ready: boolean; files: Array<{ name: string; exists: boolean; size: number }>; failLatchMs: number }
   vad: { repo: string; ready: boolean; size: number; failLatchMs: number }

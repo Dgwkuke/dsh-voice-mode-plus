@@ -354,7 +354,7 @@ globalThis.fetch = async (url, _opts) => {
       ok: true,
       status: 200,
       json: async () => ({
-        basePath: '/voice-mode',
+        basePath: '/voice-mode-plus',
         silenceMs: 1500,
         interruptLevel: 0,
         idleTimeoutMinutes: 5,
@@ -399,7 +399,7 @@ const cfg = await (async () => {
   const c = await res.json()
   // 镜像 fetchConfig 的白名单拼接
   return {
-    basePath: c.basePath ?? '/voice-mode',
+    basePath: c.basePath ?? '/voice-mode-plus',
     silenceMs: c.silenceMs ?? 1500,
     interruptLevel: c.interruptLevel ?? 0,
     idleTimeoutMinutes: c.idleTimeoutMinutes ?? 5,

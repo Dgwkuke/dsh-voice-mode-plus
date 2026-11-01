@@ -183,7 +183,7 @@ const shouldTriggerBackchannel = (config, speechActive, partialText) => {
 
 const baseConfig = {
   silenceMs: 1500,
-  basePath: '/voice-mode',
+  basePath: '/voice-mode-plus',
   isPlaying: () => true, // TTS 在播
 }
 

@@ -1,6 +1,6 @@
 /**
  * 0.1.7+ 宿主的设置读写适配器：把 `VoiceSettingsCard` 需要的 scope 接口（getSnapshot/subscribe/set）
- * 接到插件自己的 `/voice-mode/settings`（GET 读、POST 写覆盖层）。
+ * 接到插件自己的 `/voice-mode-plus/settings`（GET 读、POST 写覆盖层）。
  * ≤0.1.6 宿主仍用官方 settingsScope，不经本文件。
  *
  * Issue #15 R15-7：拉取失败不再是不可逆终态——
@@ -29,7 +29,7 @@ export interface HttpScope {
   dispose(): void
 }
 
-const SETTINGS_URL = '/voice-mode/settings'
+const SETTINGS_URL = '/voice-mode-plus/settings'
 /** 重试退避：首发 500ms，指数翻倍，封顶 10s（卡片开着时的后台拉取频率上限）。 */
 const RETRY_BASE_MS = 500
 const RETRY_MAX_MS = 10_000
@@ -72,7 +72,7 @@ export function createHttpScope(origin: string = location.origin, fetchImpl: typ
       try {
         fn()
       } catch (e) {
-        console.warn('[dsh-voice-mode] settings scope subscriber failed: ' + String(e))
+        console.warn('[dsh-voice-mode-plus] settings scope subscriber failed: ' + String(e))
       }
     }
   }

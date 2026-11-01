@@ -119,8 +119,6 @@ export class SentenceSegmenter {
   private ticks = ''
   /** 围栏内被抑制的内容暂存：流结束时若仍未闭合则回退输出（宁可念代码，也不吞掉整回合正文）。 */
   private fenced = ''
-  /** 待合并的短句（上一批最后一句太短，暂不单独成段，等下一批拼上或 flush 兜底）。 */
-  private carry = ''
   private readonly minMergeChars: number
 
   constructor(options: SegmenterOptions = {}) {
@@ -129,27 +127,19 @@ export class SentenceSegmenter {
   }
 
   /**
-   * 短句合并：把 carry 与刚切出的成句按顺序拼接；末句仍然太短则暂存到 carry，
-   * 等后续 delta（或 flush）再决定——避免「好的。」「第一，」这类碎片独立合成。
+   * 短句合并：同一批里相邻两句若前一句太短，就并在后一句上再合成，
+   * 避免「好的。」「第一，」这类碎片各自起调、各自收尾。
+   * 不跨 delta 暂存（保持首句出声的低延迟）。
    */
   private mergeAndEmit(sentences: string[]): string[] {
     const out: string[] = []
-    let pending = this.carry
-    this.carry = ''
     for (const s of sentences) {
-      if (!pending) {
-        pending = s
-        continue
+      const prev = out[out.length - 1]
+      if (prev !== undefined && spokenLength(prev) < this.minMergeChars && prev.length + s.length <= this.maxChars) {
+        out[out.length - 1] = prev + s
+      } else {
+        out.push(s)
       }
-      if (pending.length + s.length <= this.maxChars) pending += s
-      else {
-        out.push(pending)
-        pending = s
-      }
-    }
-    if (pending) {
-      if (spokenLength(pending) < this.minMergeChars && pending.length < this.maxChars / 2) this.carry = pending
-      else out.push(pending)
     }
     return out
   }
@@ -247,15 +237,7 @@ export class SentenceSegmenter {
     this.inFence = false
     this.ticks = ''
     this.fenced = ''
-    // 短句暂存兜底：流结束时 carry 必须落地（否则整段被吞——比照未闭合围栏的回退口径）。
-    const carry = this.carry
-    this.carry = ''
-    if (carry && t && carry.length + t.length <= this.maxChars) {
-      out.push(carry + t)
-    } else {
-      if (carry) out.push(carry)
-      if (t && !SKIP_PREFIX.test(t)) out.push(t)
-    }
+    if (t && !SKIP_PREFIX.test(t)) out.push(t)
     return out
   }
 }

@@ -97,7 +97,7 @@ t('外部语言包缺失本插件命名空间：回落英文；有语言包则�
   const dispose = M.bindLocale(loc)
   assert.equal(M.t('stateVoiceMode'), 'Voice Mode')
   assert.equal(M.lang(), 'en', 'ja 归并为 en 档（功能决策用）')
-  loc.register('voice-mode', 'ja', { stateVoiceMode: 'ボイスモード' })
+  loc.register('voice-mode-plus', 'ja', { stateVoiceMode: 'ボイスモード' })
   assert.equal(M.t('stateVoiceMode'), 'ボイスモード')
   assert.equal(M.t('listening'), 'Listening…', '语言包缺的键回落英文')
   dispose()

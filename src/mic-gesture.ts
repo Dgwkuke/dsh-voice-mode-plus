@@ -423,7 +423,7 @@ export function focusRelease(owners: FocusOwners, owner: string): { changed: boo
  * 设置 scope 失效桥
  *
  * host 对任一标签页、任一路径的显示类设置改动都广播 SSE 'display'；设置卡片要跟着
- * 重拉，否则本页一直显示旧值。底层 scope（0.1.7+ 的 /voice-mode/settings）只有
+ * 重拉，否则本页一直显示旧值。底层 scope（0.1.7+ 的 /voice-mode-plus/settings）只有
  * 「0→1 订阅 → 必重拉」这一条重拉入口，没有 invalidate()：这里用一座桥把卡片订阅
  * 收在**一份**底层订阅后面，失效时把底层订阅退掉再订回来，逼出那一次重拉
  * （底层将来带了 invalidate() 入口则直接用）。

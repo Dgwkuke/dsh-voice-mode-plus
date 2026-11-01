@@ -1,8 +1,8 @@
 {
-  "name": "dsh-voice-mode",
-  "description": "Voice plugin for DeepSeek Harness: local streaming speech recognition into editable drafts, sentence-by-sentence read-aloud with captions, and voice interruption. Edge online or local VITS/Kokoro TTS; host compatibility is bounded by engines.dsh.",
+  "name": "dsh-voice-mode-plus",
+  "description": "Enhanced fork of dsh-voice-mode: sentence-level prosody and pauses, decimal-safe local TTS, and automatic pitch/volume by punctuation.",
   "icon": "./icon.svg",
-  "version": "0.7.34",
+  "version": "0.1.0",
   "type": "module",
   "main": "lib/index.js",
   "repository": {

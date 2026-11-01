@@ -21,7 +21,9 @@ await build({
   platform: 'node',
   logLevel: 'silent',
 })
-const { SentenceSegmenter, plainText, splitSentences, sanitizeForTts } = await import(pathToFileURL(out).href)
+const { SentenceSegmenter, plainText, splitSentences, sanitizeForTts, pauseMsAfter } = await import(
+  pathToFileURL(out).href
+)
 
 let passed = 0
 const t = (name, fn) => {
@@ -110,10 +112,24 @@ t('flush 输出剩余缓冲', () => {
   assert.deepEqual(s.flush(), ['没有标点的一段话'])
   assert.deepEqual(s.flush(), [])
 })
-t('收尾标点（……）并入句子输出（不丢尾部标点）', () => {
+t('省略号作句内停顿：不单独切段，跟下一句合并后再合成', () => {
   const s = new SentenceSegmenter()
-  s.feed('好。…')
-  assert.deepEqual(s.feed('好。…')[0], '好。…')
+  assert.deepEqual(s.feed('让我想想……'), [])
+  assert.deepEqual(s.feed('好。'), ['让我想想……好。'])
+})
+t('分号不再终止：一句内的并列分句合在一次合成里', () => {
+  const s = new SentenceSegmenter()
+  assert.deepEqual(s.feed('第一种是本地推理；第二种是云端。'), ['第一种是本地推理；第二种是云端。'])
+})
+t('同一批里的短句与后句合并（避免碎片各自起调收尾）', () => {
+  const s = new SentenceSegmenter()
+  assert.deepEqual(s.feed('好的。我们先看第一点。'), ['好的。我们先看第一点。'])
+})
+t('句间停顿按句末标点分级', () => {
+  assert.ok(pauseMsAfter('第一句。') >= 300)
+  assert.ok(pauseMsAfter('真的吗？') >= 280)
+  assert.ok(pauseMsAfter('等等……') >= 400)
+  assert.ok(pauseMsAfter('你看，') <= 160)
 })
 t('无标点长墙按安全阀切分', () => {
   const s = new SentenceSegmenter({ maxSentenceChars: 10 })
@@ -196,11 +212,12 @@ t('~~~ 波浪号围栏：plainText 从未支持（内容照常朗读），且不
   for (const d of ['说：', '~~~', 'js\nconst a = 1;\n', '~~~', '\n改好了。']) out.push(...s.feed(d))
   for (const d of ['看：', '```', 'ts\nlet y = 2;\n', '```', '\n收尾。']) out.push(...s.feed(d))
   out.push(...s.flush())
-  assert.deepEqual(out, ['说： js', 'const a 1;', '改好了。', '看：', '收尾。'])
+  // 短句合并生效：'说： js' 实词不足阈值，与紧随的代码回退段并成一条（朗读内容不变）。
+  assert.deepEqual(out, ['说： jsconst a 1;', '改好了。', '看：', '收尾。'])
 })
 t('已闭合代码块的内容不会因后续未闭合围栏而回吐', () => {
   const s = new SentenceSegmenter()
-  assert.deepEqual(s.feed('看：```js\nlet a = 1;\n```\n好了。'), ['看：', '好了。'])
+  assert.deepEqual(s.feed('看：```js\nlet a = 1;\n```\n好了。'), ['看：好了。'])
   assert.deepEqual(s.feed('再。```js\nlet b = 2;\n'), ['再。'])
   assert.deepEqual(s.flush(), ['js\nlet b 2;']) // 只有未闭合块回吐，第一个已闭合块不泄漏
 })

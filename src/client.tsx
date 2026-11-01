@@ -1,5 +1,5 @@
 /**
- * dsh-voice-mode client half：语音模式入口、采音引擎与状态条。
+ * dsh-voice-mode-plus client half：语音模式入口、采音引擎与状态条。
  *
  * 入口（Q12）：输入框工具排麦克风按钮（conversation.input.right）+ 全局
  * Ctrl+Shift+V；激活后输入框上方常驻状态条（conversation.input.dock）。
@@ -187,7 +187,7 @@ function telemetryDeltas(tel: Partial<Record<TelemetryStage, number>>): string[]
 }
 
 /**
- * 开发模式开关：localStorage['dsh-voice-mode.telemetry'] === '1' 时状态条实时显示
+ * 开发模式开关：localStorage['dsh-voice-mode-plus.telemetry'] === '1' 时状态条实时显示
  * 「说完→首音」链路各段耗时（P1-5 延迟验收的测量面）。关闭时零采集零展示
  * （host 'latency' 事件照常下行，客户端不理会）。
  */
@@ -197,7 +197,7 @@ declare const __BUILD_TAG__: string
 // 进入语音模式相关的调试信息统一带版本号，便于确认运行的是哪一版（构建时注入 git 哈希）。
 const BUILD_TAG = __BUILD_TAG__
 
-const TELEMETRY_FLAG = 'dsh-voice-mode.telemetry'
+const TELEMETRY_FLAG = 'dsh-voice-mode-plus.telemetry'
 const telemetryEnabled =
   typeof localStorage !== 'undefined' && localStorage.getItem(TELEMETRY_FLAG) === '1'
 
@@ -330,7 +330,7 @@ const TOGGLE_TIMEOUT_MS = 8000
 const HOLD_CLEAR_FRAMES = 2
 const WAVE_BARS = 14
 /** 插件 HTTP 命名空间（与 host 侧 BASE_PATH 常量一致，固定不可配置）。 */
-const BASE_PATH = '/voice-mode'
+const BASE_PATH = '/voice-mode-plus'
 /** 右键菜单读写设置所需的 scope 子集（与设置卡片同源）。 */
 interface MenuScope {
   getSnapshot(): { status?: string; value?: Record<string, unknown> }
@@ -424,7 +424,7 @@ function setLastVoiceSession(id: string | null): void {
 
 export function apply(ctx: any): void {
   // 国际化：把 zh/en 词典注册进官方 locale 服务（切换语言即时生效、可被语言包扩展）；服务不可用则回退本地实现。
-  ctx.effect(() => bindLocale(ctx.get?.('locale')), 'dsh-voice-mode: locale dictionaries')
+  ctx.effect(() => bindLocale(ctx.get?.('locale')), 'dsh-voice-mode-plus: locale dictionaries')
   const bus = createVoiceBus(undefined, ctx)
 
   // C3 加固：浏览器挂起 AudioContext 后，只有用户交互能可靠恢复播放（Safari/Chrome 的
@@ -482,7 +482,7 @@ export function apply(ctx: any): void {
     const dispose = ctx.slots.register(
       {
         name: 'conversation.input.activity',
-        id: 'voice-mode',
+        id: 'voice-mode-plus',
         inject: (): VoiceSlotActions => ({ bus, scope }),
       },
       ActivityMic,
@@ -497,7 +497,7 @@ export function apply(ctx: any): void {
     ctx.slots.register(
       {
         name: 'conversation.input.right',
-        id: 'voice-mode',
+        id: 'voice-mode-plus',
         order: 80,
         inject: (): VoiceSlotActions => ({ bus, scope }),
       },
@@ -533,15 +533,15 @@ export function apply(ctx: any): void {
   //  - 槽位：≤0.1.5 只有 settings.plugin.item（Settings → Plugins）；≥0.1.6-alpha 起只有
   //    plugins.bundle.config（插件详情页，key = 本包名）。宿主上不存在的槽位注册是惰性的，故两个都注册。
   //  - 数据面：有 settingsScope（≤0.1.6）走官方设置存储；0.1.7+ 无该服务、官方存储拒写本插件条目
-  //    （settings/rejected），走插件自己的 /voice-mode/settings。
+  //    （settings/rejected），走插件自己的 /voice-mode-plus/settings。
   const settingsScope = (ctx as any).get?.('settingsScope')
   let scope: MenuScope
   if (settingsScope) {
     // ≤0.1.6：官方设置存储（自带跨标签页同步），无需失效桥。
-    scope = settingsScope.bind({ namespace: 'voice-mode' })
+    scope = settingsScope.bind({ namespace: 'voice-mode-plus' })
     settingsScopeInvalidate = null
   } else {
-    // 0.1.7+：插件自己的 /voice-mode/settings。底层只有「0→1 订阅 → 必重拉」这一条
+    // 0.1.7+：插件自己的 /voice-mode-plus/settings。底层只有「0→1 订阅 → 必重拉」这一条
     // 重拉入口，用桥把卡片订阅收在一份底层订阅后面：host 广播 display（别的标签页
     // 改了显示类设置）时退订再订阅，逼出一次重拉——本页设置卡不再一直显示旧值。
     // 具名引用：底层 scope 自建的窗口 focus 监听要随插件卸载/热重载摘除（M-4）。
@@ -558,8 +558,8 @@ export function apply(ctx: any): void {
     ctx.slots.register(
       {
         name: 'settings.plugin.item',
-        id: 'voice-mode',
-        key: 'voice-mode',
+        id: 'voice-mode-plus',
+        key: 'voice-mode-plus',
         order: 100,
         // M13：函数形式（与下方 settings.section 注册一致）——注册时求值会把
         // 切换语言前的旧文案冻在菜单里；函数形式每次渲染读当前语言。
@@ -572,13 +572,13 @@ export function apply(ctx: any): void {
   // 让设置在每个 dsh 版本上都有同一个好找的入口（Settings → 语音模式），不依赖各版本不同的插件页入口。
   ctx.slots.inject('settings.section', () =>
     ctx.slots.register(
-      { name: 'settings.section', id: 'voice-mode', order: 100, label: () => t('stateVoiceMode') },
+      { name: 'settings.section', id: 'voice-mode-plus', order: 100, label: () => t('stateVoiceMode') },
       () => React.createElement(VoiceSettingsCard, { scope, defaultOpen: true }),
     ),
   )
   ctx.slots.inject('plugins.bundle.config', () =>
     ctx.slots.register(
-      { name: 'plugins.bundle.config', key: 'dsh-voice-mode' },
+      { name: 'plugins.bundle.config', key: 'dsh-voice-mode-plus' },
       (props: { view?: 'summary' | 'page' }) =>
         props?.view === 'summary'
           ? React.createElement('span', null, t('settingsCardDesc'))
@@ -891,7 +891,7 @@ function createVoiceBus(basePath: string = BASE_PATH, ctx?: any): VoiceBus {
           focusWarned.add(warnedSession)
         }
         console.warn(
-          '[dsh-voice-mode] /focus rejected by host (' +
+          '[dsh-voice-mode-plus] /focus rejected by host (' +
             status +
             ' unknown_session): session ' +
             String(warnedSession) +
@@ -2049,7 +2049,7 @@ export function MicButton({
   /** 引导参数读 bus.ui.boot（bus 为单例，组件重挂载不丢；事件时读实时值）。 */
   const bootNow = (): VoiceBootConfig =>
     bus.ui.boot ?? {
-      basePath: '/voice-mode',
+      basePath: '/voice-mode-plus',
       silenceMs: 1500,
       interruptLevel: 0,
       idleTimeoutMinutes: 5,
@@ -2842,7 +2842,7 @@ export function MicButton({
       )
       bus.setUi({ mode: cfg.mode })
       engineRef.current = engine
-      // fixture 录制（ADR-0004，默认关闭；localStorage['dsh-voice-mode.record']=meta|full）
+      // fixture 录制（ADR-0004，默认关闭；localStorage['dsh-voice-mode-plus.record']=meta|full）
       fixtureRecorder.begin({
         build: BUILD_TAG,
         mode: cfg.mode,
@@ -3979,7 +3979,7 @@ export function VoiceStatusBar({ bus, sessionId }: StatusBarProps): React.ReactE
     const tel = b.ui.telemetry ?? {}
     const boot = b.ui.boot
     const lines = [
-      `dsh-voice-mode build=${BUILD_TAG}`,
+      `dsh-voice-mode-plus build=${BUILD_TAG}`,
       `state=${b.ui.state}${b.ui.error ? ' error=' + b.ui.error : ''}${b.ui.sseDown ? ' sse=down' : ''}`,
       boot
         ? `settings silenceMs=${boot.silenceMs} senseVoice=${boot.senseVoice} llmCorrect=${boot.llmCorrect} bargeInSalvage=${boot.bargeInSalvage} mode=${boot.mode} wakeWord=${boot.wakeWord ? 'set' : 'none'}`

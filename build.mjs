@@ -1,4 +1,4 @@
-// dsh-voice-mode build: esbuild-based, replicating the official tsdown.client.ts
+// dsh-voice-mode-plus build: esbuild-based, replicating the official tsdown.client.ts
 // artifact shape for the client half; the host half is a plain ESM bundle
 // with runtime deps (@deepseek-ai/schemastery, sherpa-onnx, sherpa-onnx-node) external; msedge-tts and all of its
 // transitive deps are inlined as lib/msedge-tts.cjs (see below).
@@ -9,7 +9,7 @@ import { builtinModules } from 'node:module'
 import { execSync } from 'node:child_process'
 import { join } from 'node:path'
 
-const PKG_ID = 'dsh-voice-mode'
+const PKG_ID = 'dsh-voice-mode-plus'
 
 // 构建版本号：git 短哈希（进入语音模式时打到控制台，供确认运行版本）。
 let BUILD_TAG = 'unknown'
@@ -220,4 +220,4 @@ await buildAtomically({
   logLevel: 'info',
 })
 
-console.log('[dsh-voice-mode] build done: lib/index.js (host) + lib/sense-worker.mjs + lib/tts-vits-worker.cjs + lib/client.js (browser)')
+console.log('[dsh-voice-mode-plus] build done: lib/index.js (host) + lib/sense-worker.mjs + lib/tts-vits-worker.cjs + lib/client.js (browser)')

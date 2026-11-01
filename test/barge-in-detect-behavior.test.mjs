@@ -144,7 +144,7 @@ function makeEngine(bargeInMode) {
   return createAsrEngine(
     {
       silenceMs: 1500,
-      basePath: '/voice-mode',
+      basePath: '/voice-mode-plus',
       mode: 'toggle',
       bargeInMode,
       wakeWord: '', // 无唤醒词 → listening

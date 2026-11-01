@@ -7,7 +7,7 @@
  * 新凭据）；失败/无模型/空结果/输出异常（超长或带前言，R1 I-3 护栏）一律回退原文
  * ——纠错是纯附加层，不阻断发送。
  *
- * 调用点：host 路由 POST /voice-mode/correct（客户端发送前调一次，每消息一次 RTT）。
+ * 调用点：host 路由 POST /voice-mode-plus/correct（客户端发送前调一次，每消息一次 RTT）。
  * 避自 tap：本调用不传 sessionId（index.ts 的 llm/stream tap 只拦本会话无 purpose 流，
  * 无 sessionId 直放行——已实证 index.ts:836-840）。
  */

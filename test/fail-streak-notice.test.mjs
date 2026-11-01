@@ -158,7 +158,7 @@ function makeEngine({ isPlaying = () => false, silenceMs = 1500 } = {}) {
   const engine = createAsrEngine(
     {
       silenceMs,
-      basePath: '/voice-mode',
+      basePath: '/voice-mode-plus',
       mode: 'toggle',
       bargeInMode: 'auto',
       wakeWord: '', // 无唤醒词 → 初始 listening（免待机分支干扰）

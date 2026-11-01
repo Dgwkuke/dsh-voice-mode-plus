@@ -1,5 +1,5 @@
 /**
- * dsh-voice-mode ASR engine（浏览器半）：持续聆听 + VAD 自动分段。
+ * dsh-voice-mode-plus ASR engine（浏览器半）：持续聆听 + VAD 自动分段。
  *
  * 与参照 dsh-voice 的关键差异：
  *  - 不是 tap/hold，而是「进入语音模式后持续收音」：静音 1500ms 自动断句（P1-3，端点优先由 host Silero VAD 判定），
@@ -807,7 +807,7 @@ export function createAsrEngine(config: AsrConfig, sessionId: string): AsrEngine
         } catch {
           // M6：fetch 失败不在此 restore——保持 'transcribing'，重试间隙不闪变
           // （原每 attempt restore 会让状态条在 transcribing↔speech/wake 反复跳）。
-          if (attempt === MAX_FINAL_ATTEMPTS - 1) console.warn('[dsh-voice-mode] finalize fetch failed (retries exhausted)')
+          if (attempt === MAX_FINAL_ATTEMPTS - 1) console.warn('[dsh-voice-mode-plus] finalize fetch failed (retries exhausted)')
           continue
         }
         if (res.status === 202) {
@@ -830,7 +830,7 @@ export function createAsrEngine(config: AsrConfig, sessionId: string): AsrEngine
         }
         // 5s 重试后模型仍加载（202 持久）：外层继续重试（有界 3 次），而非 return 静默丢句。
         if (res.status === 202) {
-          if (attempt === MAX_FINAL_ATTEMPTS - 1) console.warn('[dsh-voice-mode] finalize model-load timeout (retries exhausted)')
+          if (attempt === MAX_FINAL_ATTEMPTS - 1) console.warn('[dsh-voice-mode-plus] finalize model-load timeout (retries exhausted)')
           continue
         }
         // 403 会话过期：host 端活跃会话已变更（如被抢占/让出），尝试恢复后重试一次。
@@ -869,7 +869,7 @@ export function createAsrEngine(config: AsrConfig, sessionId: string): AsrEngine
         // M6：重试期间保持 'transcribing'（不在此 restore）；结果落定才统一 restore
         // ——下方「成功」一处（epoch 校验后）与「耗尽」一处（emitError 前）。
         if (!res.ok) {
-          if (attempt === MAX_FINAL_ATTEMPTS - 1) console.warn('[dsh-voice-mode] finalize 5xx (retries exhausted)')
+          if (attempt === MAX_FINAL_ATTEMPTS - 1) console.warn('[dsh-voice-mode-plus] finalize 5xx (retries exhausted)')
           continue
         }
         // 容错：网关/宿主偶发 5xx 或响应非 JSON 时，不打断状态机也不误报——重试。
@@ -877,7 +877,7 @@ export function createAsrEngine(config: AsrConfig, sessionId: string): AsrEngine
         try {
           out = (await res.json()) as { text?: string }
         } catch {
-          if (attempt === MAX_FINAL_ATTEMPTS - 1) console.warn('[dsh-voice-mode] finalize response is not JSON (retries exhausted)')
+          if (attempt === MAX_FINAL_ATTEMPTS - 1) console.warn('[dsh-voice-mode-plus] finalize response is not JSON (retries exhausted)')
           continue
         }
         // 校验本段是否被弃（弃段令牌）：仅当定稿期间发生真正的弃段（clearWakeSegment /
@@ -940,7 +940,7 @@ export function createAsrEngine(config: AsrConfig, sessionId: string): AsrEngine
       emitError('recognitionFail')
     })().catch((err) => {
       // 兜底：意外异常不得让该序号永久悬空——否则后续定稿被保序游标永久卡住（静默丢句）。
-      console.warn(`[dsh-voice-mode] finalize unexpected error (seq=${mySeq}, settled as no-emit)`, err)
+      console.warn(`[dsh-voice-mode-plus] finalize unexpected error (seq=${mySeq}, settled as no-emit)`, err)
       settle(null)
     })
   }
@@ -1310,7 +1310,7 @@ export function createAsrEngine(config: AsrConfig, sessionId: string): AsrEngine
     // track.getSettings() 是唯一可见信号；false 时外放回声几乎必然漏进 → 自打断。
     const aecOn = stream.getAudioTracks()[0]?.getSettings().echoCancellation === true
     if (!aecOn) {
-      console.warn('[dsh-voice-mode] native browser echoCancellation is not in effect (speakers may self-interrupt); use headphones or manual barge-in')
+      console.warn('[dsh-voice-mode-plus] native browser echoCancellation is not in effect (speakers may self-interrupt); use headphones or manual barge-in')
     }
     // 批 7O（ADR-0006）第一级自动探测：detect 模式根据原生 AEC 实际状态落运行时打断方式。
     //   false → manual（不自打断，配合状态条提示）；true → auto。auto/manual 显式取值不探测。

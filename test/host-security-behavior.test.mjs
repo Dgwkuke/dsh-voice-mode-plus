@@ -240,8 +240,8 @@ apply(fakeCtx, {
   silenceMs: 2000,
   idleTimeoutMinutes: 10,
 })
-assert.ok(routes.has('/voice-mode/toggle'), '路由未注册——apply 失败？')
-assert.ok(routes.has('/voice-mode'), 'config 路由未注册')
+assert.ok(routes.has('/voice-mode-plus/toggle'), '路由未注册——apply 失败？')
+assert.ok(routes.has('/voice-mode-plus'), 'config 路由未注册')
 
 // ---------------------------------------------------------------- 假 req / res（integration-fork 同款）
 function makeRes() {
@@ -275,7 +275,7 @@ function makeRes() {
   return res
 }
 
-function makeReq({ remoteAddress = '127.0.0.1', origin, host = '127.0.0.1:3080', method = 'POST', url = '/voice-mode/toggle', body }) {
+function makeReq({ remoteAddress = '127.0.0.1', origin, host = '127.0.0.1:3080', method = 'POST', url = '/voice-mode-plus/toggle', body }) {
   const listeners = {}
   const req = {
     socket: { remoteAddress },
@@ -327,19 +327,19 @@ const bodyError = (res) => {
 // ---------------------------------------------------------------- ① 回环层
 console.log('① 回环层（allowLan=false：仅回环放行）')
 
-await t('loopback GET /voice-mode → 200（配置输出）', async () => {
-  const res = await awaitRes(get('/voice-mode', makeReq({ method: 'GET', body: undefined })))
+await t('loopback GET /voice-mode-plus → 200（配置输出）', async () => {
+  const res = await awaitRes(get('/voice-mode-plus', makeReq({ method: 'GET', body: undefined })))
   assert.equal(res.statusCode, 200, `status=${res.statusCode}`)
 })
 
-await t('非回环 GET /voice-mode → 403 forbidden（第 2 层）', async () => {
-  const res = await awaitRes(get('/voice-mode', makeReq({ method: 'GET', body: undefined, remoteAddress: '192.168.1.5' })))
+await t('非回环 GET /voice-mode-plus → 403 forbidden（第 2 层）', async () => {
+  const res = await awaitRes(get('/voice-mode-plus', makeReq({ method: 'GET', body: undefined, remoteAddress: '192.168.1.5' })))
   assert.equal(res.statusCode, 403, `status=${res.statusCode}`)
   assert.equal(bodyCode(res), 'forbidden')
 })
 
-await t('非回环 POST /voice-mode/toggle → 403 forbidden（第二条路由同防线）', async () => {
-  const res = await awaitRes(get('/voice-mode/toggle', makeReq({ remoteAddress: '10.0.0.2', body: JSON.stringify({ sessionId: 'live-1', on: true }) })))
+await t('非回环 POST /voice-mode-plus/toggle → 403 forbidden（第二条路由同防线）', async () => {
+  const res = await awaitRes(get('/voice-mode-plus/toggle', makeReq({ remoteAddress: '10.0.0.2', body: JSON.stringify({ sessionId: 'live-1', on: true }) })))
   assert.equal(res.statusCode, 403, `status=${res.statusCode}`)
   assert.equal(bodyCode(res), 'forbidden')
 })
@@ -347,27 +347,27 @@ await t('非回环 POST /voice-mode/toggle → 403 forbidden（第二条路由�
 // ---------------------------------------------------------------- ② 跨源层
 console.log('② 跨源层（Origin 与请求目标不同源 → 403）')
 
-await t('跨站 Origin POST /voice-mode/toggle → 403 cross-origin denied', async () => {
-  const res = await awaitRes(get('/voice-mode/toggle', makeReq({ origin: 'http://evil.example', body: JSON.stringify({ sessionId: 'live-1', on: true }) })))
+await t('跨站 Origin POST /voice-mode-plus/toggle → 403 cross-origin denied', async () => {
+  const res = await awaitRes(get('/voice-mode-plus/toggle', makeReq({ origin: 'http://evil.example', body: JSON.stringify({ sessionId: 'live-1', on: true }) })))
   assert.equal(res.statusCode, 403, `status=${res.statusCode}`)
   assert.equal(bodyCode(res), 'forbidden')
 })
 
 await t('同源 Origin POST → 穿透跨源层（落入入参校验 400，非 403）', async () => {
-  const res = await awaitRes(get('/voice-mode/toggle', makeReq({ origin: 'http://127.0.0.1:3080', body: JSON.stringify({}) })))
+  const res = await awaitRes(get('/voice-mode-plus/toggle', makeReq({ origin: 'http://127.0.0.1:3080', body: JSON.stringify({}) })))
   assert.equal(res.statusCode, 400, `同源不应被跨源层拒（status=${res.statusCode}）`)
 })
 
 await t('无 Origin（非浏览器客户端）→ 跨源层放行（回环层兜底）', async () => {
-  const res = await awaitRes(get('/voice-mode/toggle', makeReq({ body: JSON.stringify({}) })))
+  const res = await awaitRes(get('/voice-mode-plus/toggle', makeReq({ body: JSON.stringify({}) })))
   assert.equal(res.statusCode, 400, `无 Origin 应放行到入参层（status=${res.statusCode}）`)
 })
 
 // ---------------------------------------------------------------- ③ 体量层
 console.log('③ 体量层（MAX_JSON_BODY=16KB：超限 413）')
 
-await t('超限 body（20KB）POST /voice-mode/toggle → 413', async () => {
-  const res = await awaitRes(get('/voice-mode/toggle', makeReq({ body: 'x'.repeat(20 * 1024) })))
+await t('超限 body（20KB）POST /voice-mode-plus/toggle → 413', async () => {
+  const res = await awaitRes(get('/voice-mode-plus/toggle', makeReq({ body: 'x'.repeat(20 * 1024) })))
   assert.equal(res.statusCode, 413, `status=${res.statusCode}`)
 })
 
@@ -380,13 +380,13 @@ await t('MAX_JSON_BODY 常量锁：src/index.ts 为 16*1024（16KB）', () => {
 console.log('④ 入参层（/toggle：缺 sessionId / 缺 on / on 非布尔 → 400）')
 
 await t('缺 sessionId → 400（不得静默落退出分支）', async () => {
-  const res = await awaitRes(get('/voice-mode/toggle', makeReq({ body: JSON.stringify({ on: true }) })))
+  const res = await awaitRes(get('/voice-mode-plus/toggle', makeReq({ body: JSON.stringify({ on: true }) })))
   assert.equal(res.statusCode, 400, `status=${res.statusCode}`)
   assert.equal(bodyCode(res), 'bad_request')
 })
 
 await t('缺 on → 400 on required（M7：旧客户端漏字段不得把活跃用户踢出模式）', async () => {
-  const res = await awaitRes(get('/voice-mode/toggle', makeReq({ body: JSON.stringify({ sessionId: 'live-1' }) })))
+  const res = await awaitRes(get('/voice-mode-plus/toggle', makeReq({ body: JSON.stringify({ sessionId: 'live-1' }) })))
   assert.equal(res.statusCode, 400, `status=${res.statusCode}`)
   // error 串精确锁：缺 on 必须报 'on required'——只被类型校验兜住（报 'invalid on'）
   // 时调用方无法区分「漏字段」与「字段类型错」，排障失据（k6 变异实证）。
@@ -394,7 +394,7 @@ await t('缺 on → 400 on required（M7：旧客户端漏字段不得把活跃�
 })
 
 await t('on 非布尔 → 400 invalid on（防误落退出分支）', async () => {
-  const res = await awaitRes(get('/voice-mode/toggle', makeReq({ body: JSON.stringify({ sessionId: 'live-1', on: 'yes' }) })))
+  const res = await awaitRes(get('/voice-mode-plus/toggle', makeReq({ body: JSON.stringify({ sessionId: 'live-1', on: 'yes' }) })))
   assert.equal(res.statusCode, 400, `status=${res.statusCode}`)
   assert.equal(bodyError(res), 'invalid on', `on 类型错的错误串应为 invalid on（实际 ${bodyError(res)}）`)
 })
@@ -406,7 +406,7 @@ await t('未知会话 → 403（第 0 层：只接受真实存在的会话）', 
   // 独立 sessionId（ghost-session）：不与其他用例共享限流桶——⑤⑥ 解耦，
   // 重排/增删用例互不影响（R2 验真轮 Minor：旧实现与 ⑥ 共享 ghost-limiter 桶，
   // ⑥ 隐式依赖 ⑤ 先消耗 1 次配额，删 ⑤ 会误导性红）。
-  const res = await awaitRes(get('/voice-mode/toggle', makeReq({ body: JSON.stringify({ sessionId: 'ghost-session', on: true }) })))
+  const res = await awaitRes(get('/voice-mode-plus/toggle', makeReq({ body: JSON.stringify({ sessionId: 'ghost-session', on: true }) })))
   assert.equal(res.statusCode, 403, `status=${res.statusCode}`)
 })
 
@@ -422,17 +422,17 @@ await t('限流行为（独立桶自建配额）：同会话第 1/2 次放行到
   // 若机器在三次请求间卡顿 >2s，窗口过期会使 #3 落 403 误导性红；正常执行路径
   // 三次请求间隔为毫秒级（假 req/res，无真实 IO）。卡顿误判时重跑即可。
   const sid = 'ghost-rate'
-  const r1 = await awaitRes(get('/voice-mode/toggle', makeReq({ body: JSON.stringify({ sessionId: sid, on: true }) })))
+  const r1 = await awaitRes(get('/voice-mode-plus/toggle', makeReq({ body: JSON.stringify({ sessionId: sid, on: true }) })))
   assert.equal(r1.statusCode, 403, `第 1 次应放过限流层落到会话层（status=${r1.statusCode}）`)
-  const r2 = await awaitRes(get('/voice-mode/toggle', makeReq({ body: JSON.stringify({ sessionId: sid, on: true }) })))
+  const r2 = await awaitRes(get('/voice-mode-plus/toggle', makeReq({ body: JSON.stringify({ sessionId: sid, on: true }) })))
   assert.equal(r2.statusCode, 403, `第 2 次应仍放过限流层（status=${r2.statusCode}）`)
-  const r3 = await awaitRes(get('/voice-mode/toggle', makeReq({ body: JSON.stringify({ sessionId: sid, on: true }) })))
+  const r3 = await awaitRes(get('/voice-mode-plus/toggle', makeReq({ body: JSON.stringify({ sessionId: sid, on: true }) })))
   assert.equal(r3.statusCode, 429, `第 3 次应被限流（status=${r3.statusCode}）`)
   assert.equal(bodyCode(r3), 'rate_limited')
 })
 
 await t('不同会话独立桶（ghost-other 不受 ghost-rate 限流影响）', async () => {
-  const res = await awaitRes(get('/voice-mode/toggle', makeReq({ body: JSON.stringify({ sessionId: 'ghost-other', on: true }) })))
+  const res = await awaitRes(get('/voice-mode-plus/toggle', makeReq({ body: JSON.stringify({ sessionId: 'ghost-other', on: true }) })))
   assert.equal(res.statusCode, 403, `独立桶应放行到会话层（status=${res.statusCode}）`)
 })
 
@@ -483,12 +483,12 @@ function sseRes() {
 const openedStreams = []
 const openStream = (tabId) => {
   const res = sseRes()
-  routes.get('/voice-mode/stream')(makeReq({ method: 'GET', url: `/voice-mode/stream?tabId=${tabId}` }), res)
+  routes.get('/voice-mode-plus/stream')(makeReq({ method: 'GET', url: `/voice-mode-plus/stream?tabId=${tabId}` }), res)
   openedStreams.push({ res, tabId })
   return res
 }
 const postFocus = (payload, extra = {}) =>
-  awaitRes(get('/voice-mode/focus', makeReq({ url: '/voice-mode/focus', body: JSON.stringify(payload), ...extra })))
+  awaitRes(get('/voice-mode-plus/focus', makeReq({ url: '/voice-mode-plus/focus', body: JSON.stringify(payload), ...extra })))
 const focusOf = (res) => JSON.parse(res.body)
 
 /** SSE 观察通道：本文件所有 SSE 断言都从它读广播，因此**任何用例都不得关闭它**。 */
@@ -623,9 +623,9 @@ const preStep = (sid, turn, step = 1) => {
   return h({ agent: { id: sid }, turn, step }, () => Promise.resolve({ kind: 'proceed' }))
 }
 const postCancel = (sid, keepAsr = true) =>
-  awaitRes(get('/voice-mode/cancel', makeReq({ url: '/voice-mode/cancel', body: JSON.stringify({ sessionId: sid, keepAsr }) })))
-const enterVoice = (sid) => awaitRes(get('/voice-mode/toggle', makeReq({ url: '/voice-mode/toggle', body: JSON.stringify({ sessionId: sid, on: true }) })))
-const leaveVoice = (sid) => awaitRes(get('/voice-mode/toggle', makeReq({ url: '/voice-mode/toggle', body: JSON.stringify({ sessionId: sid, on: false }) })))
+  awaitRes(get('/voice-mode-plus/cancel', makeReq({ url: '/voice-mode-plus/cancel', body: JSON.stringify({ sessionId: sid, keepAsr }) })))
+const enterVoice = (sid) => awaitRes(get('/voice-mode-plus/toggle', makeReq({ url: '/voice-mode-plus/toggle', body: JSON.stringify({ sessionId: sid, on: true }) })))
+const leaveVoice = (sid) => awaitRes(get('/voice-mode-plus/toggle', makeReq({ url: '/voice-mode-plus/toggle', body: JSON.stringify({ sessionId: sid, on: false }) })))
 const setReadAloud = (v) => settingsWatcher({ ...settingsValue, readAloud: v })
 
 const VOICE_SID = 'live-1' // fakeCtx.get('sessions') 只认这一个（/toggle 第 0 层校验）
@@ -1051,7 +1051,7 @@ console.log('⑫ /cancel reason：interrupt 合闸门 / 停止朗读与缺省不
 
 const cancelAs = (sid, extra) =>
   awaitRes(
-    get('/voice-mode/cancel', makeReq({ url: '/voice-mode/cancel', body: JSON.stringify({ sessionId: sid, keepAsr: true, ...extra }) })),
+    get('/voice-mode-plus/cancel', makeReq({ url: '/voice-mode-plus/cancel', body: JSON.stringify({ sessionId: sid, keepAsr: true, ...extra }) })),
   )
 /** 让「/cancel 到达时该句仍在合成中」——否则 pump 的 finally 早已过去，观察不到闸门状态。 */
 const withSynthesisInFlight = async (fn) => {
@@ -1254,7 +1254,7 @@ await t('SSE owner 保持：被顶替连接的迟到 close 不得武装 8s 让�
   assert.equal((await postFocus({ sessionId: SID, tabId: 'tab-P' })).statusCode, 200)
   // 让 tab-P 成为语音模式的 owner tab（/toggle 上报 tabId）
   const toggleRes = await awaitRes(
-    get('/voice-mode/toggle', makeReq({ url: '/voice-mode/toggle', body: JSON.stringify({ sessionId: SID, on: true, tabId: 'tab-P' }) })),
+    get('/voice-mode-plus/toggle', makeReq({ url: '/voice-mode-plus/toggle', body: JSON.stringify({ sessionId: SID, on: true, tabId: 'tab-P' }) })),
   )
   assert.equal(toggleRes.statusCode, 200, `前置不成立：/toggle 未成功（${toggleRes.statusCode}）`)
   const oldConn = openStream('tab-P')
@@ -1290,7 +1290,7 @@ await t('SSE owner 让出（正向对照）：当前连接**真正**断开仍会
   assert.ok(freeSseSlots(1) >= 1, '前置不成立：腾不出 1 个 SSE 槽位')
   assert.equal((await postFocus({ sessionId: SID, tabId: 'tab-Q' })).statusCode, 200)
   const toggleRes = await awaitRes(
-    get('/voice-mode/toggle', makeReq({ url: '/voice-mode/toggle', body: JSON.stringify({ sessionId: SID, on: true, tabId: 'tab-Q' }) })),
+    get('/voice-mode-plus/toggle', makeReq({ url: '/voice-mode-plus/toggle', body: JSON.stringify({ sessionId: SID, on: true, tabId: 'tab-Q' }) })),
   )
   assert.equal(toggleRes.statusCode, 200, `前置不成立：/toggle 未成功（${toggleRes.statusCode}）`)
   const conn = openStream('tab-Q')
@@ -1321,7 +1321,7 @@ await t('SSE owner 让出（正向对照）：当前连接**真正**断开仍会
 console.log('⑮ /preview：GET 不被受理、无效请求不烧试听限流桶')
 
 await t('/preview 非 POST → 405（跨站 <img src> 的 GET 被方法校验挡住）', async () => {
-  const res = await awaitRes(get('/voice-mode/preview', makeReq({ method: 'GET', url: '/voice-mode/preview', body: undefined })))
+  const res = await awaitRes(get('/voice-mode-plus/preview', makeReq({ method: 'GET', url: '/voice-mode-plus/preview', body: undefined })))
   assert.equal(res.statusCode, 405, `GET /preview 应 405（实际 ${res.statusCode}）`)
   assert.equal(res.headers.allow, 'POST')
 })
@@ -1331,12 +1331,12 @@ await t('/preview 无效请求（无 body / 缺 voice）不消耗试听限流桶
   // 否则「空 body 的 POST」也是一条无密钥的烧配额路径。
   for (let i = 0; i < 25; i++) {
     // body: '' = 合法的「空 body 请求」（makeReq 对 undefined 不会派发 end，handler 会一直等）
-    const res = await awaitRes(get('/voice-mode/preview', makeReq({ url: '/voice-mode/preview', body: '' })))
+    const res = await awaitRes(get('/voice-mode-plus/preview', makeReq({ url: '/voice-mode-plus/preview', body: '' })))
     assert.equal(res.statusCode, 400, `第 ${i + 1} 次空 body 应 400（实际 ${res.statusCode}）`)
   }
   // 配额未被消耗：随后的合法 POST 仍能走到合成（而不是第 21 次就 429）。
   const ok = await awaitRes(
-    get('/voice-mode/preview', makeReq({ url: '/voice-mode/preview', body: JSON.stringify({ voice: 'zh-CN-XiaoxiaoNeural' }) })),
+    get('/voice-mode-plus/preview', makeReq({ url: '/voice-mode-plus/preview', body: JSON.stringify({ voice: 'zh-CN-XiaoxiaoNeural' }) })),
   )
   assert.notEqual(ok.statusCode, 429, '无效请求把试听限流桶烧光了——限流必须排在入参校验之后')
 })
@@ -1346,11 +1346,11 @@ await t('/asr 非 POST → 405（跨站 GET 不消耗 ASR 限流桶）', async (
   // 进限流桶（`asr:${sid}`，60 次/秒滑动窗口）→ 持续压制该会话的 ASR 上行。
   const SID = 'live-asr-21'
   for (let i = 0; i < 70; i++) {
-    const res = await awaitRes(get('/voice-mode/asr', makeReq({ method: 'GET', url: `/voice-mode/asr?sessionId=${SID}` })))
+    const res = await awaitRes(get('/voice-mode-plus/asr', makeReq({ method: 'GET', url: `/voice-mode-plus/asr?sessionId=${SID}` })))
     assert.equal(res.statusCode, 405, `第 ${i + 1} 次 GET /asr 应 405（实际 ${res.statusCode}）`)
   }
   // 桶未被消耗：随后的合法 POST（空 body，走 asr-host 桩）仍不应 429。
-  const post = await awaitRes(get('/voice-mode/asr', makeReq({ url: `/voice-mode/asr?sessionId=${SID}`, body: '' })))
+  const post = await awaitRes(get('/voice-mode-plus/asr', makeReq({ url: `/voice-mode-plus/asr?sessionId=${SID}`, body: '' })))
   assert.notEqual(post.statusCode, 429, 'GET 把 ASR 限流桶烧光了——方法校验必须排在限流之前')
 })
 

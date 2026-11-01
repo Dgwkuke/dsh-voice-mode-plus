@@ -14,7 +14,7 @@ import { chmodSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'n
 import { homedir } from 'node:os'
 import { dirname, join } from 'node:path'
 
-export const SETTINGS_FILE_NAME = 'voice-mode.settings.json'
+export const SETTINGS_FILE_NAME = 'voice-mode-plus.settings.json'
 
 /** 解析覆盖层文件路径：优先宿主给的 profile home，其次 $DSH_HOME，最后 ~/.dsh。 */
 export function settingsFilePath(profileHome?: unknown): string {

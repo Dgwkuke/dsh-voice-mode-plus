@@ -17,7 +17,7 @@ import { en, htmlLangIsZh, translateLocal, zh, type TKey } from './strings.ts'
 export type { TKey } from './strings.ts'
 
 /** 本插件在官方 locale 服务里的命名空间（语言包按此命名空间补充翻译）。 */
-export const LOCALE_NAMESPACE = 'voice-mode'
+export const LOCALE_NAMESPACE = 'voice-mode-plus'
 
 type Params = Record<string, string | number>
 

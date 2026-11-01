@@ -161,7 +161,7 @@ function makeEngine({ isPlaying = () => false } = {}) {
   const engine = createAsrEngine(
     {
       silenceMs: 1500,
-      basePath: '/voice-mode',
+      basePath: '/voice-mode-plus',
       mode: 'toggle',
       bargeInMode: 'auto',
       wakeWord: '',
