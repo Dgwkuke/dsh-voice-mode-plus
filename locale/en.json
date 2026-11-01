@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Voice Mode Plus",
+    "description": "Enhanced fork of dsh-voice-mode: sentence pauses and punctuation prosody, decimal-safe local TTS."
+  }
+}
