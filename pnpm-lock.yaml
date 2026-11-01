@@ -20,8 +20,8 @@ importers:
         specifier: ^18.2.0
         version: 18.2.0
       sherpa-onnx:
-        specifier: ^1.13.6
-        version: 1.13.6
+        specifier: ^2.0.1
+        version: 2.0.1
       sherpa-onnx-node:
         specifier: 1.13.6
         version: 1.13.6
@@ -567,8 +567,8 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  sherpa-onnx@1.13.6:
-    resolution: {integrity: sha512-N4EpR3PNBdhPWB0dar6K01KKFWdLtvocFFXqT6srljxcDna+o57WAEN9GDHgwA/kKm+JVuDjZ9s/ydF3jOFhuQ==}
+  sherpa-onnx@2.0.1:
+    resolution: {integrity: sha512-MlcZOKglIO+U+PL635cWjLYVgW9PwGTAZ5vgGIWHchw7MC1bHyEy5428chj15K00EF5SF0jp3KgGOHUbiGj2/g==}
 
   stream-browserify@3.0.0:
     resolution: {integrity: sha512-H73RAHsVBapbim0tU2JwwOiXUj+fikfiaoYAKHF3VJfA0pe2BCzkhAHBlLG6REzE+2WNZcxOXjK7lkso+9euLA==}
@@ -1054,7 +1054,7 @@ snapshots:
   sherpa-onnx-win-x64@1.13.6:
     optional: true
 
-  sherpa-onnx@1.13.6: {}
+  sherpa-onnx@2.0.1: {}
 
   stream-browserify@3.0.0:
     dependencies:
